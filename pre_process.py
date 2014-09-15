@@ -12,52 +12,6 @@ import re
 # plink --bfile bed_file --recodeA --out raw_file
 # this return the ped and map files
 
-#@profile
-def merge_geno_pheno(ids, X, snps):
-    """
-    """
-    # TODO pass by parameters
-
-    df_pheno = get_pheno('data/prediction/EarPhenoNew2NA.txt', ['IID', 'LobeSize'])
-    df_geno_id = pd.DataFrame(ids, columns=['IID'])
-    df_geno_data = pd.DataFrame(X, columns=snps[1:])
-    
-    df_geno = pd.concat([df_geno_id, df_geno_data], axis=1)
-    df_merged = pd.merge(df_geno, df_pheno, on='IID')
-    df_merged.fillna(-1, inplace=True)
-    return df_merged
-
-#@profile
-def get_pheno(filename, filter_columns):
-    """
-    """
-    df = pd.read_csv(filename, usecols=filter_columns, sep=r"\t")
-    return df
-
-#@profile
-def load_npz(filename):
-    """
-    """
-    data = np.load(filename)
-    ids = data['ids']
-    X = data['X']
-    snps = data['snps']
-
-    return ids, X, snps
-
-
-
-def normalization(X):
-    """
-    """    
-    print "Before imputation:", np.unique(X)
- 
-    imputer = Imputer(missing_values=-1, strategy="most_frequent")
-    X = imputer.fit_transform(X)
-
-    print "After imputation:", np.unique(X), X.shape
-
-    return X
 
 class RawDataPheno(object):
     """
@@ -67,7 +21,14 @@ class RawDataPheno(object):
         super(RawDataPheno, self).__init__()
         self.filename = filename
         self.pheno_name = pheno_name
-        
+    
+    #@profile
+    def get_pheno(self):
+        """
+        docstring for get_pheno
+        """
+        df = pd.read_csv(self.filename, usecols=self.pheno_name, sep=r"\t")
+        return df   
 
 class RawDataGeno(object):
     """
@@ -131,6 +92,49 @@ class RawDataGeno(object):
         np.savez("out_".format(os.path.splitext(os.path.basename(file))[0]), 
                                X=X, snps=snps, ids=ids)
 
+
+###### CLEAN THIS #######
+#@profile
+def merge_geno_pheno(df_pheno, ids, X, snps):
+    """
+    """
+    # TODO pass by parameters
+
+    #df_pheno = get_pheno('data/prediction/EarPhenoNew2NA.txt', ['IID', 'LobeSize'])
+    df_geno_id = pd.DataFrame(ids, columns=['IID'])
+    df_geno_data = pd.DataFrame(X, columns=snps[1:])
+    
+    df_geno = pd.concat([df_geno_id, df_geno_data], axis=1)
+    df_merged = pd.merge(df_geno, df_pheno, on='IID')
+    df_merged.fillna(-1, inplace=True)
+    return df_merged
+
+#@profile
+def load_npz(filename):
+    """
+    """
+    data = np.load(filename)
+    ids = data['ids']
+    X = data['X']
+    snps = data['snps']
+
+    return ids, X, snps
+
+def normalization(X):
+    """
+    """    
+    print "Before imputation:", np.unique(X)
+ 
+    imputer = Imputer(missing_values=-1, strategy="most_frequent")
+    X = imputer.fit_transform(X)
+
+    print "After imputation:", np.unique(X), X.shape
+
+    return X
+
+
+
+###### MAIN PART #######
 #@profile
 def main(filenames, snps_to_use):
     """
