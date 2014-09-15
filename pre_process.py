@@ -25,7 +25,6 @@ def merge_geno_pheno(ids, X, snps):
     df_geno = pd.concat([df_geno_id, df_geno_data], axis=1)
     df_merged = pd.merge(df_geno, df_pheno, on='IID')
     df_merged.fillna(-1, inplace=True)
-
     return df_merged
 
 #@profile
@@ -46,48 +45,6 @@ def load_npz(filename):
 
     return ids, X, snps
 
-#@profile
-def get_geno(filename, header, filter_columns):
-    """
-    Return only the values of the selected snps and the
-    ID of the individual.
-    """
-    df = pd.read_csv(filename, header=None, names=header, usecols=filter_columns, sep=r"\s*")
-    return df
-
-#@profile
-def get_filter_snps(list_all_snps):
-    """
-    Get only the columns for the ID and wanted snps.
-    """
-    #TODO get by parameters the snps to filter
-    search_re = re.compile('(IID|rs17023457_\w|rs3827760_\w|rs2080401_\w|rs10212419_\w|rs1960918_\w|rs263156_\w |rs1619249_\w)').search
-    
-    return [ ( l, m.group(1) ) for l in list_all_snps for m in (search_re(l),) if m]
-
-
-#@profile
-def get_all_snps(filename):
-    """
-    Return all the columns of the original file.
-    """
-
-    df = pd.read_csv(filename, sep=r"\s*", nrows=1)
-    cols = df.columns.values
-    del df
-    return cols
-
-#@profile
-def save_binary_file(df, file):
-    """
-    Take geno values, snps and id to npz files
-    """
-
-    X = df.ix[:, 1:].values
-    snps = df.columns.values
-    ids = df['IID'].values
-    np.savez("data/kaustubh-all-numpy_{}.npz".format(os.path.splitext(os.path.basename(file))[0]), X=X, snps=snps, ids=ids)
-    print "save numpy binary"
 
 
 def normalization(X):
@@ -102,20 +59,88 @@ def normalization(X):
 
     return X
 
+class RawDataPheno(object):
+    """
+    docstring for RawDataPheno
+    """
+    def __init__(self, filename, pheno_name):
+        super(RawDataPheno, self).__init__()
+        self.filename = filename
+        self.pheno_name = pheno_name
+        
+
+class RawDataGeno(object):
+    """
+    docstring for RawData
+    """
+    def __init__(self, filenames, snps_to_use):
+        """
+        """
+        super(RawDataGeno, self).__init__()
+        self.filenames = filenames
+        # Get the header from the first file
+        self.all_snps = self.get_all_snps(filenames[0])
+        self.snps_to_use = self.get_filter_snps(snps_to_use)
+        self.snps_to_use = [snp[0] for snp in self.snps_to_use]
+    
+
+    #@profile
+    def get_all_snps(self, filename):
+        """
+        Return all the columns of the original file.
+        """
+
+        df = pd.read_csv(filename, sep=r"\s*", nrows=1)
+        cols = df.columns.values
+        del df
+        return cols
+    
+    #@profile
+    def get_filter_snps(self, snps_to_use):
+        """
+        Get only the columns for the ID and wanted snps.
+        """
+        #TODO get by parameters the snps to filter
+        union_term = "_\w|"
+        search_term = "(IID|" + union_term.join(snps_to_use) + "_\w)"
+        search_re = re.compile(search_term).search
+    
+        return [ ( l, m.group(1) ) for l in self.all_snps for m in (search_re(l),) if m]
+    
+    #@profile
+    def get_geno(self, filename):
+        """
+        Return only the values of the selected snps and the
+        ID of the individual.
+        """
+        df = pd.read_csv(filename, header=None, names=self.all_snps,
+                          usecols=self.snps_to_use, sep=r"\s*")
+        
+        return df
+
+    #@profile
+    def save_binary_file(self, df, file):
+        """
+        Take geno values, snps and id to npz files
+        """
+        #TODO check if this have to be a method
+
+        X = df.ix[:, 1:].values
+        snps = self.snps_to_use
+        ids = df['IID'].values
+        np.savez("out_".format(os.path.splitext(os.path.basename(file))[0]), 
+                               X=X, snps=snps, ids=ids)
+
 #@profile
-def main(filenames):
+def main(filenames, snps_to_use):
     """
     Save the raw data into npz files for faster manipulation
     """
     #TODO file by parameter
-    header = get_all_snps('data/prediction/split_rawaa')
-    filter_snps = get_filter_snps(header)
-    filter_snps = [snp[0] for snp in filter_snps]
-
+    my_data = RawDataGeno(filenames, snps_to_use)
     for file in filenames:
-        df = get_geno(file, header, filter_snps)
-        save_binary_file(df, file)
-
+        df = my_data.get_geno(file)
+        my_data.save_binary_file(df, file)
 
 if __name__ == '__main__':
 
@@ -131,9 +156,11 @@ if __name__ == '__main__':
     if args.file:
         filenames = [args.file]
     elif args.folder:
-        filenames = map(lambda f: os.path.join(args.folder, f), os.listdir(args.folder))
+        filenames = sorted(map(lambda f: os.path.join(args.folder, f), os.listdir(args.folder)))
     else:
         parser.print_help()
         sys.exit(1)
-
-    main(filenames)
+    #TOD pass this by parameter
+    snps_to_use = ["rs17023457", "rs3827760", "rs2080401", "rs10212419", 
+                   "rs1960918", "rs263156", "rs1619249"]
+    main(filenames, snps_to_use)
