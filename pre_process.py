@@ -123,15 +123,10 @@ def load_npz(filename):
 def normalization(X):
     """
     """    
-    print "Before imputation:", np.unique(X)
- 
     imputer = Imputer(missing_values=-1, strategy="most_frequent")
     X = imputer.fit_transform(X)
 
-    print "After imputation:", np.unique(X), X.shape
-
     return X
-
 
 
 ###### MAIN PART #######
