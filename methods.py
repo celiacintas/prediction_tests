@@ -4,15 +4,15 @@
 import os
 import argparse
 import numpy as np
-from sklearn.decomposition import RandomizedPCA
 from sklearn.svm import SVC
+from sklearn.decomposition import RandomizedPCA
 from sklearn.ensemble import ExtraTreesClassifier
 from sklearn.cross_validation import train_test_split
 from pre_process import load_npz, merge_geno_pheno, RawDataPheno, \
 						normalization
 from plot_tools import plot_PCA, plot_confusion_matrix
 from sklearn.metrics import accuracy_score, classification_report
-from matplotlib import pyplot as plt
+
 
 def get_PCA(X):
 	"""
