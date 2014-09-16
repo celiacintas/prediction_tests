@@ -3,13 +3,14 @@
 
 import numpy as np
 from matplotlib import pyplot as plt
-from sklearn.metrics import confusion_matrix, accuracy_score, classification_report
+from sklearn.metrics import confusion_matrix
 
 def plot_PCA(Xp, y):
 	"""
 	"""
 	# Plot individuals 
 	populations = np.unique(y)
+	print populations
 
 	colors = plt.get_cmap("hsv")
 	plt.figure(figsize=(10, 4))
