@@ -27,7 +27,7 @@ class RawDataPheno(object):
         """
         docstring for get_pheno
         """
-        df = pd.read_csv(self.filename, usecols=self.pheno_name, sep=r"\t")
+        df = pd.read_csv(self.filename, usecols=self.pheno_name)
         return df   
 
 class RawDataGeno(object):
@@ -105,8 +105,9 @@ def merge_geno_pheno(df_pheno, ids, X, snps):
     df_geno_data = pd.DataFrame(X, columns=snps[1:])
     
     df_geno = pd.concat([df_geno_id, df_geno_data], axis=1)
-    df_merged = pd.merge(df_geno, df_pheno, on='IID')
+    df_merged = pd.merge(df_pheno, df_geno, on='IID')
     df_merged.fillna(-1, inplace=True)
+
     return df_merged
 
 #@profile
