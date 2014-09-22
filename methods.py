@@ -71,26 +71,20 @@ def main(filenames, filename_pheno, phenos):
 		ids_t, X_t, snps = load_npz(file)
 		ids.append(ids_t)
 		X.append(X_t)
-	# This should go away
-
 
 	ids = np.concatenate(ids, axis=0)
 	X = np.concatenate(X, axis=0)
 
 	data_pheno_ear = RawDataPheno(filename_pheno, phenos)
 	df_pheno_ear = data_pheno_ear.get_pheno()
-
-	
 	merged_df = merge_geno_pheno(df_pheno_ear, ids, X, snps)
-	#print merged_df
 	norm_x = normalization(merged_df.ix[:,2:])
-	print merged_df.ix[:,2:]
 	
 	X_pca = get_PCA(norm_x)
 	#merged_df[data_pheno.pheno_name[1]].replace(to_replace=-1, value=0, inplace=True)
 	merged_df[data_pheno_ear.pheno_name[-1]] = merged_df[data_pheno_ear.pheno_name[-1]].astype(np.int)
 	y = merged_df[data_pheno_ear.pheno_name[-1]].values
-	print "Pheno working : {} on {}".format(data_pheno_ear.pheno_name[-1], merged_df.columns)
+	print "Pheno working : {}".format(data_pheno_ear.pheno_name[-1])
 	"""if np.nan in y or -1 in y:
 		print "hay nan :("
 	else:
@@ -107,7 +101,6 @@ def main(filenames, filename_pheno, phenos):
 	y_pred = clf.predict(X_test)
 	clf.score(X_test, y_test)
 	print classification_report(y_test, y_pred)
-	print data_pheno_ear.pheno_name[-1]
 	plot_confusion_matrix(y_test, y_pred)
 
 
